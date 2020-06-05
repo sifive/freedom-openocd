@@ -4,7 +4,7 @@ include scripts/Freedom.mk
 # Include version identifiers to build up the full version string
 include Version.mk
 PACKAGE_HEADING := freedom-openocd
-PACKAGE_VERSION := $(RISCV_OPENOCD_VERSION)-$(FREEDOM_OPENOCD_CODELINE)$(FREEDOM_OPENOCD_GENERATION)b$(FREEDOM_OPENOCD_BUILD)
+PACKAGE_VERSION := $(RISCV_OPENOCD_VERSION)-$(FREEDOM_OPENOCD_ID)
 
 # Source code directory references
 SRCNAME_OPENOCD := riscv-openocd
@@ -48,18 +48,21 @@ $(OBJ_WIN64)/build/$(PACKAGE_HEADING)/libs.stamp: \
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp:
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/source.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
+	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/source.stamp,%/rec/$(PACKAGE_HEADING),$@)))
 	rm -rf $($@_INSTALL)
 	mkdir -p $($@_INSTALL)
+	rm -rf $($@_REC)
+	mkdir -p $($@_REC)
 	rm -rf $(dir $@)
 	mkdir -p $(dir $@)
-	cd $(dir $@); curl -L -f -s -o libusb-1.0.22.tar.bz2 https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.tar.bz2
-	cd $(dir $@); $(TAR) -xf libusb-1.0.22.tar.bz2
+	cd $($@_REC); curl -L -f -s -o libusb-1.0.22.tar.bz2 https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.tar.bz2
+	cd $(dir $@); $(TAR) -xf $($@_REC)/libusb-1.0.22.tar.bz2
 	cd $(dir $@); mv libusb-1.0.22 libusb
-	cd $(dir $@); curl -L -f -s -o libusb-compat-0.1.7.tar.bz2 https://github.com/libusb/libusb-compat-0.1/releases/download/v0.1.7/libusb-compat-0.1.7.tar.bz2
-	cd $(dir $@); $(TAR) -xf libusb-compat-0.1.7.tar.bz2
+	cd $($@_REC); curl -L -f -s -o libusb-compat-0.1.7.tar.bz2 https://github.com/libusb/libusb-compat-0.1/releases/download/v0.1.7/libusb-compat-0.1.7.tar.bz2
+	cd $(dir $@); $(TAR) -xf $($@_REC)/libusb-compat-0.1.7.tar.bz2
 	cd $(dir $@); mv libusb-compat-0.1.7 libusb-compat
-	cd $(dir $@); curl -L -f -s -o libftdi1-1.4.tar.bz2 https://www.intra2net.com/en/developer/libftdi/download/libftdi1-1.4.tar.bz2
-	cd $(dir $@); $(TAR) -xf libftdi1-1.4.tar.bz2
+	cd $($@_REC); curl -L -f -s -o libftdi1-1.4.tar.bz2 https://www.intra2net.com/en/developer/libftdi/download/libftdi1-1.4.tar.bz2
+	cd $(dir $@); $(TAR) -xf $($@_REC)/libftdi1-1.4.tar.bz2
 	cd $(dir $@); mv libftdi1-1.4 libftdi
 	cp -a $(SRCPATH_OPENOCD) $(dir $@)
 	$(SED) -i -f $(PATCHESDIR)/openocd.sed -e "s/SIFIVE_PACKAGE_VERSION/SiFive OpenOCD $(PACKAGE_VERSION)/" $(dir $@)/$(SRCNAME_OPENOCD)/src/openocd.c
@@ -70,14 +73,15 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb/build.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb/build.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/libusb/build.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
+	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libusb/build.stamp,%/rec/$(PACKAGE_HEADING),$@)))
 	cd $(dir $@) && $($($@_TARGET)-odeps-vars) ./configure \
 		$($($@_TARGET)-rocd-host) \
 		--prefix=$(abspath $($@_INSTALL)) \
 		--disable-udev \
 		--enable-static \
-		$($($@_TARGET)-ousb-configure) &>make-configure.log
-	$(MAKE) -C $(dir $@) &>$(dir $@)/make-build.log
-	$(MAKE) -C $(dir $@) -j1 install &>$(dir $@)/make-install.log
+		$($($@_TARGET)-ousb-configure) &>$($@_REC)/libusb-make-configure.log
+	$(MAKE) -C $(dir $@) &>$($@_REC)/libusb-make-build.log
+	$(MAKE) -C $(dir $@) -j1 install &>$($@_REC)/libusb-make-install.log
 	date > $@
 
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp: \
@@ -85,13 +89,14 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
+	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp,%/rec/$(PACKAGE_HEADING),$@)))
 	cd $(dir $@) && $($($@_TARGET)-odeps-vars) ./configure \
 		$($($@_TARGET)-rocd-host) \
 		--prefix=$(abspath $($@_INSTALL)) \
 		--enable-static \
-		$($($@_TARGET)-ousb-configure) &>make-configure.log
-	$(MAKE) -C $(dir $@) &>$(dir $@)/make-build.log
-	$(MAKE) -C $(dir $@) -j1 install &>$(dir $@)/make-install.log
+		$($($@_TARGET)-ousb-configure) &>$($@_REC)/libusb-compat-make-configure.log
+	$(MAKE) -C $(dir $@) &>$($@_REC)/libusb-compat-make-build.log
+	$(MAKE) -C $(dir $@) -j1 install &>$($@_REC)/libusb-compat-make-install.log
 	date > $@
 
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libftdi/build.stamp: \
@@ -99,11 +104,12 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libftdi/build.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libftdi/build.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/libftdi/build.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
+	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libftdi/build.stamp,%/rec/$(PACKAGE_HEADING),$@)))
 	cd $(dir $@) && $($($@_TARGET)-odeps-vars) cmake \
 		-DCMAKE_INSTALL_PREFIX:PATH=$(abspath $($@_INSTALL)) \
-		$($($@_TARGET)-oftdi-configure) . &>make-cmake.log
-	$(MAKE) -C $(dir $@) &>$(dir $@)/make-build.log
-	$(MAKE) -C $(dir $@) -j1 install &>$(dir $@)/make-install.log
+		$($($@_TARGET)-oftdi-configure) . &>$($@_REC)/libftdi-make-cmake.log
+	$(MAKE) -C $(dir $@) &>$($@_REC)/libftdi-make-build.log
+	$(MAKE) -C $(dir $@) -j1 install &>$($@_REC)/libftdi-make-install.log
 	date > $@
 
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp: \
@@ -111,11 +117,12 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
+	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp,%/rec/$(PACKAGE_HEADING),$@)))
 	rm -f $(abspath $($@_INSTALL))/lib/lib*.dylib*
 	rm -f $(abspath $($@_INSTALL))/lib/lib*.so*
 	rm -f $(abspath $($@_INSTALL))/lib64/lib*.so*
 	find $(dir $@) -iname configure.ac | $(SED) s/configure.ac/m4/ | xargs mkdir -p
-	cd $(dir $@); ./bootstrap nosubmodule &>make-bootstrap.log
+	cd $(dir $@); ./bootstrap nosubmodule &>$($@_REC)/$(SRCNAME_OPENOCD)-make-bootstrap.log
 	cd $(dir $@); $($($@_TARGET)-rocd-vars) ./configure \
 		$($($@_TARGET)-rocd-host) \
 		--prefix=$(abspath $($@_INSTALL)) \
@@ -123,8 +130,8 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp: \
 		--disable-werror \
 		--enable-ftdi \
 		--enable-jtag_vpi \
-		$($($@_TARGET)-rocd-configure) &>make-configure.log
-	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) &>$(dir $@)/make-build.log
-	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) pdf html &>$(dir $@)/make-build-doc.log
-	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) -j1 install install-pdf install-html &>$(dir $@)/make-install.log
+		$($($@_TARGET)-rocd-configure) &>$($@_REC)/$(SRCNAME_OPENOCD)-make-configure.log
+	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) &>$($@_REC)/$(SRCNAME_OPENOCD)-make-build.log
+	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) pdf html &>$($@_REC)/$(SRCNAME_OPENOCD)-make-build-doc.log
+	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) -j1 install install-pdf install-html &>$($@_REC)/$(SRCNAME_OPENOCD)-make-install.log
 	date > $@
