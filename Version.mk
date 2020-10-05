@@ -2,4 +2,4 @@
 RISCV_OPENOCD_VERSION := 0.10.0
 
 # Customization ID, which should identify the customization added to the original by SiFive
-FREEDOM_OPENOCD_ID := sifive1.0.0
+FREEDOM_OPENOCD_ID := 2020.09.0-preview1

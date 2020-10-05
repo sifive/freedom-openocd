@@ -3,7 +3,7 @@ include scripts/Freedom.mk
 
 # Include version identifiers to build up the full version string
 include Version.mk
-PACKAGE_HEADING := freedom-openocd
+PACKAGE_HEADING := riscv-openocd
 PACKAGE_VERSION := $(RISCV_OPENOCD_VERSION)-$(FREEDOM_OPENOCD_ID)$(EXTRA_SUFFIX)
 
 # Source code directory references
