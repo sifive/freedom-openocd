@@ -46,7 +46,10 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libs.stamp: \
 
 $(OBJ_WIN64)/build/$(PACKAGE_HEADING)/libs.stamp: \
 		$(OBJ_WIN64)/build/$(PACKAGE_HEADING)/install.stamp
-	$(WIN64)-gcc -print-search-dirs | grep ^libraries | cut -d= -f2- | xargs -I {} -d: find {} -iname "libgcc_*.dll" | xargs cp -t $(OBJDIR)/$(WIN64)/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64)/bin
+	$(WIN64)-gcc -print-search-dirs | grep ^libraries | cut -d= -f2- | tr : "\n" | xargs -I {} find {} -iname "libwinpthread*.dll" | xargs cp -t $(OBJDIR)/$(WIN64)/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64)/bin
+	$(WIN64)-gcc -print-search-dirs | grep ^libraries | cut -d= -f2- | tr : "\n" | xargs -I {} find {} -iname "libgcc_s_seh*.dll" | xargs cp -t $(OBJDIR)/$(WIN64)/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64)/bin
+	$(WIN64)-gcc -print-search-dirs | grep ^libraries | cut -d= -f2- | tr : "\n" | xargs -I {} find {} -iname "libstdc*.dll" | xargs cp -t $(OBJDIR)/$(WIN64)/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64)/bin
+	$(WIN64)-gcc -print-search-dirs | grep ^libraries | cut -d= -f2- | tr : "\n" | xargs -I {} find {} -iname "libssp*.dll" | xargs cp -t $(OBJDIR)/$(WIN64)/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64)/bin
 	date > $@
 
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp:
@@ -138,6 +141,7 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp: \
 	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) &>$($@_REC)/$(SRCNAME_OPENOCD)-make-build.log
 	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) pdf html &>$($@_REC)/$(SRCNAME_OPENOCD)-make-build-doc.log
 	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) -j1 install install-pdf install-html &>$($@_REC)/$(SRCNAME_OPENOCD)-make-install.log
+	tclsh scripts/dyn-lib-check-$($@_TARGET).tcl $(abspath $($@_INSTALL))/bin/openocd
 	date > $@
 
 $(OBJDIR)/$(NATIVE)/test/$(PACKAGE_HEADING)/test.stamp: \
