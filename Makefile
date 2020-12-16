@@ -3,6 +3,7 @@ include scripts/Freedom.mk
 
 # Include version identifiers to build up the full version string
 include Version.mk
+PACKAGE_WORDING := OpenOCD
 PACKAGE_HEADING := riscv-openocd
 PACKAGE_VERSION := $(RISCV_OPENOCD_VERSION)-$(FREEDOM_OPENOCD_ID)$(EXTRA_SUFFIX)
 
@@ -35,8 +36,17 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/install.stamp: \
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/install.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/install.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
 	mkdir -p $(dir $@)
-	git log > $(abspath $($@_INSTALL))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).commitlog
+	mkdir -p $(dir $@)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).bundle/features
+	git log --format="[%ad] %s" > $(abspath $($@_INSTALL))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).changelog
 	cp README.md $(abspath $($@_INSTALL))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).readme.md
+	tclsh scripts/generate-feature-xml.tcl "$(PACKAGE_WORDING)" "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)" $($@_TARGET) $(abspath $($@_INSTALL))
+	tclsh scripts/generate-chmod755-sh.tcl $(abspath $($@_INSTALL))
+	tclsh scripts/generate-site-xml.tcl "$(PACKAGE_WORDING)" "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)" $($@_TARGET) $(abspath $(dir $@))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).bundle
+	tclsh scripts/generate-bundle-mk.tcl $(abspath $($@_INSTALL)) RISCV_TAGS "$(FREEDOM_OPENOCD_RISCV_TAGS)" TOOLS_TAGS "$(FREEDOM_OPENOCD_TOOLS_TAGS)"
+	cp $(abspath $($@_INSTALL))/bundle.mk $(abspath $(dir $@))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).bundle
+	cd $($@_INSTALL); zip -rq $(abspath $(dir $@))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).bundle/features/$(PACKAGE_HEADING)_$(FREEDOM_OPENOCD_ID)_$(RISCV_OPENOCD_VERSION).jar *
+	tclsh scripts/check-maximum-path-length.tcl $(abspath $($@_INSTALL)) "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)"
+	tclsh scripts/check-same-name-different-case.tcl $(abspath $($@_INSTALL))
 	date > $@
 
 # We might need some extra target libraries for this package
@@ -56,12 +66,17 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp:
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/source.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
 	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/source.stamp,%/rec/$(PACKAGE_HEADING),$@)))
+	tclsh scripts/check-naming-and-version-syntax.tcl "$(PACKAGE_WORDING)" "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)"
 	rm -rf $($@_INSTALL)
 	mkdir -p $($@_INSTALL)
 	rm -rf $($@_REC)
 	mkdir -p $($@_REC)
 	rm -rf $(dir $@)
 	mkdir -p $(dir $@)
+	git log > $($@_REC)/$(PACKAGE_HEADING)-git-commit.log
+	cp .gitmodules $($@_REC)/$(PACKAGE_HEADING)-git-modules.log
+	git remote -v > $($@_REC)/$(PACKAGE_HEADING)-git-remote.log
+	git submodule status > $($@_REC)/$(PACKAGE_HEADING)-git-submodule.log
 	cd $($@_REC); curl -L -f -s -o libusb-1.0.22.tar.bz2 https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.tar.bz2
 	cd $(dir $@); $(TAR) -xf $($@_REC)/libusb-1.0.22.tar.bz2
 	cd $(dir $@); mv libusb-1.0.22 libusb
