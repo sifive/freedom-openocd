@@ -9,7 +9,7 @@ PACKAGE_VERSION := $(RISCV_OPENOCD_VERSION)-$(FREEDOM_OPENOCD_ID)$(EXTRA_SUFFIX)
 
 # Source code directory references
 SRCNAME_OPENOCD := riscv-openocd
-SRCPATH_OPENOCD := $(SRCDIR)/$(SRCNAME_OPENOCD)
+SRCPATH_OPENOCD := src/$(SRCNAME_OPENOCD)
 
 # Some special package configure flags for specific targets
 $(WIN64)-rocd-host         := --host=$(WIN64)
@@ -35,17 +35,24 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/install.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/install.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/install.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
+	$(eval $@_PROPERTIES := $(patsubst %/build/$(PACKAGE_HEADING)/install.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).properties,$@))
 	mkdir -p $(dir $@)
-	mkdir -p $(dir $@)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).bundle/features
 	git log --format="[%ad] %s" > $(abspath $($@_INSTALL))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).changelog
 	cp README.md $(abspath $($@_INSTALL))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).readme.md
-	tclsh scripts/generate-feature-xml.tcl "$(PACKAGE_WORDING)" "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)" $($@_TARGET) $(abspath $($@_INSTALL))
-	tclsh scripts/generate-chmod755-sh.tcl $(abspath $($@_INSTALL))
-	tclsh scripts/generate-site-xml.tcl "$(PACKAGE_WORDING)" "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)" $($@_TARGET) $(abspath $(dir $@))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).bundle
-	tclsh scripts/generate-bundle-mk.tcl $(abspath $($@_INSTALL)) RISCV_TAGS "$(FREEDOM_OPENOCD_RISCV_TAGS)" TOOLS_TAGS "$(FREEDOM_OPENOCD_TOOLS_TAGS)"
-	cp $(abspath $($@_INSTALL))/bundle.mk $(abspath $(dir $@))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).bundle
-	cd $($@_INSTALL); zip -rq $(abspath $(dir $@))/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET).bundle/features/$(PACKAGE_HEADING)_$(FREEDOM_OPENOCD_ID)_$(RISCV_OPENOCD_VERSION).jar *
-	tclsh scripts/check-maximum-path-length.tcl $(abspath $($@_INSTALL)) "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)"
+	rm -f $(abspath $($@_PROPERTIES))
+	echo "\# SiFive Freedom Package Properties File" > $(abspath $($@_PROPERTIES))
+	echo "PACKAGE_TYPE = freedom-tools" >> $(abspath $($@_PROPERTIES))
+	echo "PACKAGE_DESC_SEG = $(PACKAGE_WORDING)" >> $(abspath $($@_PROPERTIES))
+	echo "PACKAGE_FIXED_ID = $(PACKAGE_HEADING)" >> $(abspath $($@_PROPERTIES))
+	echo "PACKAGE_BUILD_ID = $(FREEDOM_OPENOCD_ID)$(EXTRA_SUFFIX)" >> $(abspath $($@_PROPERTIES))
+	echo "PACKAGE_CORE_VER = $(RISCV_OPENOCD_VERSION)" >> $(abspath $($@_PROPERTIES))
+	echo "PACKAGE_TARGET = $($@_TARGET)" >> $(abspath $($@_PROPERTIES))
+	echo "PACKAGE_VENDOR = SiFive" >> $(abspath $($@_PROPERTIES))
+	echo "PACKAGE_RIGHTS = sifive-v00 eclipse-v20" >> $(abspath $($@_PROPERTIES))
+	echo "RISCV_TAGS = $(FREEDOM_OPENOCD_RISCV_TAGS)" >> $(abspath $($@_PROPERTIES))
+	echo "TOOLS_TAGS = $(FREEDOM_OPENOCD_TOOLS_TAGS)" >> $(abspath $($@_PROPERTIES))
+	cp $(abspath $($@_PROPERTIES)) $(abspath $($@_INSTALL))/
+	tclsh scripts/check-maximum-path-length.tcl $(abspath $($@_INSTALL)) "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)$(EXTRA_SUFFIX)"
 	tclsh scripts/check-same-name-different-case.tcl $(abspath $($@_INSTALL))
 	date > $@
 
@@ -65,45 +72,45 @@ $(OBJ_WIN64)/build/$(PACKAGE_HEADING)/libs.stamp: \
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp:
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/source.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
-	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/source.stamp,%/rec/$(PACKAGE_HEADING),$@)))
-	tclsh scripts/check-naming-and-version-syntax.tcl "$(PACKAGE_WORDING)" "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)"
+	$(eval $@_BUILDLOG := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/source.stamp,%/buildlog/$(PACKAGE_HEADING),$@)))
+	tclsh scripts/check-naming-and-version-syntax.tcl "$(PACKAGE_WORDING)" "$(PACKAGE_HEADING)" "$(RISCV_OPENOCD_VERSION)" "$(FREEDOM_OPENOCD_ID)$(EXTRA_SUFFIX)"
 	rm -rf $($@_INSTALL)
 	mkdir -p $($@_INSTALL)
-	rm -rf $($@_REC)
-	mkdir -p $($@_REC)
+	rm -rf $($@_BUILDLOG)
+	mkdir -p $($@_BUILDLOG)
 	rm -rf $(dir $@)
 	mkdir -p $(dir $@)
-	git log > $($@_REC)/$(PACKAGE_HEADING)-git-commit.log
-	cp .gitmodules $($@_REC)/$(PACKAGE_HEADING)-git-modules.log
-	git remote -v > $($@_REC)/$(PACKAGE_HEADING)-git-remote.log
-	git submodule status > $($@_REC)/$(PACKAGE_HEADING)-git-submodule.log
-	cd $($@_REC); curl -L -f -s -o libusb-1.0.22.tar.bz2 https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.tar.bz2
-	cd $(dir $@); $(TAR) -xf $($@_REC)/libusb-1.0.22.tar.bz2
+	git log > $($@_BUILDLOG)/$(PACKAGE_HEADING)-git-commit.log
+	cp .gitmodules $($@_BUILDLOG)/$(PACKAGE_HEADING)-git-modules.log
+	git remote -v > $($@_BUILDLOG)/$(PACKAGE_HEADING)-git-remote.log
+	git submodule status > $($@_BUILDLOG)/$(PACKAGE_HEADING)-git-submodule.log
+	cd $(dir $@); curl -L -f -s -o libusb-1.0.22.tar.bz2 https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.tar.bz2
+	cd $(dir $@); $(TAR) -xf libusb-1.0.22.tar.bz2
 	cd $(dir $@); mv libusb-1.0.22 libusb
-	cd $($@_REC); curl -L -f -s -o libusb-compat-0.1.7.tar.bz2 https://github.com/libusb/libusb-compat-0.1/releases/download/v0.1.7/libusb-compat-0.1.7.tar.bz2
-	cd $(dir $@); $(TAR) -xf $($@_REC)/libusb-compat-0.1.7.tar.bz2
+	cd $(dir $@); curl -L -f -s -o libusb-compat-0.1.7.tar.bz2 https://github.com/libusb/libusb-compat-0.1/releases/download/v0.1.7/libusb-compat-0.1.7.tar.bz2
+	cd $(dir $@); $(TAR) -xf libusb-compat-0.1.7.tar.bz2
 	cd $(dir $@); mv libusb-compat-0.1.7 libusb-compat
-	cd $($@_REC); curl -L -f -s -o libftdi1-1.4.tar.bz2 https://www.intra2net.com/en/developer/libftdi/download/libftdi1-1.4.tar.bz2
-	cd $(dir $@); $(TAR) -xf $($@_REC)/libftdi1-1.4.tar.bz2
+	cd $(dir $@); curl -L -f -s -o libftdi1-1.4.tar.bz2 https://www.intra2net.com/en/developer/libftdi/download/libftdi1-1.4.tar.bz2
+	cd $(dir $@); $(TAR) -xf libftdi1-1.4.tar.bz2
 	cd $(dir $@); mv libftdi1-1.4 libftdi
 	cp -a $(SRCPATH_OPENOCD) $(dir $@)
-	$(SED) -i -f $(PATCHESDIR)/openocd.sed -e "s/SIFIVE_PACKAGE_VERSION/SiFive OpenOCD $(PACKAGE_VERSION)/" $(dir $@)/$(SRCNAME_OPENOCD)/src/openocd.c
-	$(SED) -E -i -f $(PATCHESDIR)/openocd-rtos.sed $(dir $@)/$(SRCNAME_OPENOCD)/src/rtos/rtos.c
+	$(SED) -i -f patches/openocd.sed -e "s/SIFIVE_PACKAGE_VERSION/SiFive OpenOCD $(PACKAGE_VERSION)/" $(dir $@)/$(SRCNAME_OPENOCD)/src/openocd.c
+	$(SED) -E -i -f patches/openocd-rtos.sed $(dir $@)/$(SRCNAME_OPENOCD)/src/rtos/rtos.c
 	date > $@
 
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb/build.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb/build.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/libusb/build.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
-	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libusb/build.stamp,%/rec/$(PACKAGE_HEADING),$@)))
+	$(eval $@_BUILDLOG := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libusb/build.stamp,%/buildlog/$(PACKAGE_HEADING),$@)))
 	cd $(dir $@) && $($($@_TARGET)-odeps-vars) ./configure \
 		$($($@_TARGET)-rocd-host) \
 		--prefix=$(abspath $($@_INSTALL)) \
 		--disable-udev \
 		--enable-static \
-		$($($@_TARGET)-ousb-configure) &>$($@_REC)/libusb-make-configure.log
-	$(MAKE) -C $(dir $@) &>$($@_REC)/libusb-make-build.log
-	$(MAKE) -C $(dir $@) -j1 install &>$($@_REC)/libusb-make-install.log
+		$($($@_TARGET)-ousb-configure) &>$($@_BUILDLOG)/libusb-make-configure.log
+	$(MAKE) -C $(dir $@) &>$($@_BUILDLOG)/libusb-make-build.log
+	$(MAKE) -C $(dir $@) -j1 install &>$($@_BUILDLOG)/libusb-make-install.log
 	date > $@
 
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp: \
@@ -111,14 +118,14 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
-	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp,%/rec/$(PACKAGE_HEADING),$@)))
+	$(eval $@_BUILDLOG := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libusb-compat/build.stamp,%/buildlog/$(PACKAGE_HEADING),$@)))
 	cd $(dir $@) && $($($@_TARGET)-odeps-vars) ./configure \
 		$($($@_TARGET)-rocd-host) \
 		--prefix=$(abspath $($@_INSTALL)) \
 		--enable-static \
-		$($($@_TARGET)-ousb-configure) &>$($@_REC)/libusb-compat-make-configure.log
-	$(MAKE) -C $(dir $@) &>$($@_REC)/libusb-compat-make-build.log
-	$(MAKE) -C $(dir $@) -j1 install &>$($@_REC)/libusb-compat-make-install.log
+		$($($@_TARGET)-ousb-configure) &>$($@_BUILDLOG)/libusb-compat-make-configure.log
+	$(MAKE) -C $(dir $@) &>$($@_BUILDLOG)/libusb-compat-make-build.log
+	$(MAKE) -C $(dir $@) -j1 install &>$($@_BUILDLOG)/libusb-compat-make-install.log
 	date > $@
 
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libftdi/build.stamp: \
@@ -126,12 +133,12 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libftdi/build.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/libftdi/build.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/libftdi/build.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
-	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libftdi/build.stamp,%/rec/$(PACKAGE_HEADING),$@)))
+	$(eval $@_BUILDLOG := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/libftdi/build.stamp,%/buildlog/$(PACKAGE_HEADING),$@)))
 	cd $(dir $@) && $($($@_TARGET)-odeps-vars) cmake \
 		-DCMAKE_INSTALL_PREFIX:PATH=$(abspath $($@_INSTALL)) \
-		$($($@_TARGET)-oftdi-configure) . &>$($@_REC)/libftdi-make-cmake.log
-	$(MAKE) -C $(dir $@) &>$($@_REC)/libftdi-make-build.log
-	$(MAKE) -C $(dir $@) -j1 install &>$($@_REC)/libftdi-make-install.log
+		$($($@_TARGET)-oftdi-configure) . &>$($@_BUILDLOG)/libftdi-make-cmake.log
+	$(MAKE) -C $(dir $@) &>$($@_BUILDLOG)/libftdi-make-build.log
+	$(MAKE) -C $(dir $@) -j1 install &>$($@_BUILDLOG)/libftdi-make-install.log
 	date > $@
 
 $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp: \
@@ -139,12 +146,12 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp: \
 		$(OBJDIR)/%/build/$(PACKAGE_HEADING)/source.stamp
 	$(eval $@_TARGET := $(patsubst $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp,%,$@))
 	$(eval $@_INSTALL := $(patsubst %/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp,%/install/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$($@_TARGET),$@))
-	$(eval $@_REC := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp,%/rec/$(PACKAGE_HEADING),$@)))
+	$(eval $@_BUILDLOG := $(abspath $(patsubst %/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp,%/buildlog/$(PACKAGE_HEADING),$@)))
 	rm -f $(abspath $($@_INSTALL))/lib/lib*.dylib*
 	rm -f $(abspath $($@_INSTALL))/lib/lib*.so*
 	rm -f $(abspath $($@_INSTALL))/lib64/lib*.so*
 	find $(dir $@) -iname configure.ac | $(SED) s/configure.ac/m4/ | xargs mkdir -p
-	cd $(dir $@); ./bootstrap nosubmodule &>$($@_REC)/$(SRCNAME_OPENOCD)-make-bootstrap.log
+	cd $(dir $@); ./bootstrap nosubmodule &>$($@_BUILDLOG)/$(SRCNAME_OPENOCD)-make-bootstrap.log
 	cd $(dir $@); $($($@_TARGET)-rocd-vars) ./configure \
 		$($($@_TARGET)-rocd-host) \
 		--prefix=$(abspath $($@_INSTALL)) \
@@ -152,10 +159,10 @@ $(OBJDIR)/%/build/$(PACKAGE_HEADING)/$(SRCNAME_OPENOCD)/build.stamp: \
 		--disable-werror \
 		--enable-ftdi \
 		--enable-jtag_vpi \
-		$($($@_TARGET)-rocd-configure) &>$($@_REC)/$(SRCNAME_OPENOCD)-make-configure.log
-	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) &>$($@_REC)/$(SRCNAME_OPENOCD)-make-build.log
-	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) pdf html &>$($@_REC)/$(SRCNAME_OPENOCD)-make-build-doc.log
-	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) -j1 install install-pdf install-html &>$($@_REC)/$(SRCNAME_OPENOCD)-make-install.log
+		$($($@_TARGET)-rocd-configure) &>$($@_BUILDLOG)/$(SRCNAME_OPENOCD)-make-configure.log
+	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) &>$($@_BUILDLOG)/$(SRCNAME_OPENOCD)-make-build.log
+	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) pdf html &>$($@_BUILDLOG)/$(SRCNAME_OPENOCD)-make-build-doc.log
+	$(MAKE) $($($@_TARGET)-rocd-vars) -C $(dir $@) -j1 install install-pdf install-html &>$($@_BUILDLOG)/$(SRCNAME_OPENOCD)-make-install.log
 	tclsh scripts/dyn-lib-check-$($@_TARGET).tcl $(abspath $($@_INSTALL))/bin/openocd
 	date > $@
 
