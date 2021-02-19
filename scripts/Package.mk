@@ -51,19 +51,19 @@ $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64).tar.gz: \
 		$(OBJDIR)/$(WIN64)/build/$(PACKAGE_HEADING)/install.stamp \
 		$(OBJDIR)/$(WIN64)/build/$(PACKAGE_HEADING)/libs.stamp
 	mkdir -p $(dir $@)
-	$(TAR) --dereference --hard-dereference -C $(OBJDIR)/$(WIN64)/install -c $(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64) | gzip > $(abspath $@)
+	cd $(OBJDIR)/$(WIN64)/install; $(TAR) --dereference --hard-dereference -c $(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64) | gzip > $(abspath $@)
 
 $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64).src.tar.gz: \
 		$(OBJDIR)/$(WIN64)/build/$(PACKAGE_HEADING)/install.stamp \
 		$(OBJDIR)/$(WIN64)/build/$(PACKAGE_HEADING)/libs.stamp
 	mkdir -p $(dir $@)
-	$(TAR) --dereference --hard-dereference -C $(abspath .) --exclude bin --exclude obj -c * | gzip > $(abspath $@)
+	cd $(abspath .); $(TAR) --dereference --hard-dereference --exclude bin --exclude obj -c * | gzip > $(abspath $@)
 
 $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64).log.tar.gz: \
 		$(OBJDIR)/$(WIN64)/build/$(PACKAGE_HEADING)/install.stamp \
 		$(OBJDIR)/$(WIN64)/build/$(PACKAGE_HEADING)/libs.stamp
 	mkdir -p $(dir $@)
-	$(TAR) --dereference --hard-dereference -C $(OBJDIR)/$(WIN64)/buildlog/$(PACKAGE_HEADING) -c * | gzip > $(abspath $@)
+	cd $(OBJDIR)/$(WIN64)/buildlog/$(PACKAGE_HEADING); $(TAR) --dereference --hard-dereference -c * | gzip > $(abspath $@)
 
 $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64).properties: \
 		$(OBJDIR)/$(WIN64)/build/$(PACKAGE_HEADING)/install.stamp \
@@ -74,17 +74,17 @@ $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(WIN64).properties: \
 $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(NATIVE).tar.gz: \
 		$(OBJDIR)/$(NATIVE)/build/$(PACKAGE_HEADING)/install.stamp
 	mkdir -p $(dir $@)
-	$(TAR) --dereference --hard-dereference -C $(OBJDIR)/$(NATIVE)/install -c $(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(NATIVE) | gzip > $(abspath $@)
+	cd $(OBJDIR)/$(NATIVE)/install; $(TAR) --dereference --hard-dereference -c $(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(NATIVE) | gzip > $(abspath $@)
 
 $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(NATIVE).src.tar.gz: \
 		$(OBJDIR)/$(NATIVE)/build/$(PACKAGE_HEADING)/install.stamp
 	mkdir -p $(dir $@)
-	$(TAR) --dereference --hard-dereference -C $(abspath .) --exclude bin --exclude obj -c * | gzip > $(abspath $@)
+	cd $(abspath .); $(TAR) --dereference --hard-dereference --exclude bin --exclude obj -c * | gzip > $(abspath $@)
 
 $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(NATIVE).log.tar.gz: \
 		$(OBJDIR)/$(NATIVE)/build/$(PACKAGE_HEADING)/install.stamp
 	mkdir -p $(dir $@)
-	$(TAR) --dereference --hard-dereference -C $(OBJDIR)/$(NATIVE)/buildlog/$(PACKAGE_HEADING) -c * | gzip > $(abspath $@)
+	cd $(OBJDIR)/$(NATIVE)/buildlog/$(PACKAGE_HEADING); $(TAR) --dereference --hard-dereference -c * | gzip > $(abspath $@)
 
 $(BINDIR)/$(PACKAGE_HEADING)-$(PACKAGE_VERSION)-$(NATIVE).properties: \
 		$(OBJDIR)/$(NATIVE)/build/$(PACKAGE_HEADING)/install.stamp
